@@ -6,7 +6,7 @@ import (
 	"log"
 )
 
-// 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
+// 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
 type Person struct {
 	First string
 }
