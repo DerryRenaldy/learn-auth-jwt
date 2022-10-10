@@ -37,6 +37,38 @@ func createToken(c *UserClaims) (string, error) {
 	return signedToken, nil
 }
 
+func parseToken(signedToken string) (*UserClaims, error) {
+	claims := &UserClaims{}
+	t, err := jwt.ParseWithClaims(signedToken, claims, func(t *jwt.Token) (interface{}, error) {
+		if t.Method.Alg() == jwt.SigningMethodHS512.Alg() {
+			return nil, fmt.Errorf("Invalid signing algorithm")
+		}
+		return key, nil
+	})
+
+	// check error
+	if err != nil {
+		v, _ := err.(*jwt.ValidationError)
+		switch v.Errors {
+		case jwt.ValidationErrorSignatureInvalid:
+			// token invalid
+			return nil, fmt.Errorf("Error signature invalid: %w \n", jwt.ValidationErrorSignatureInvalid)
+		case jwt.ValidationErrorExpired:
+			return nil, fmt.Errorf("Error signature expired: %w \n", jwt.ValidationErrorExpired)
+		default:
+			return nil, fmt.Errorf("some error occured: %w \n", err)
+		}
+
+	}
+
+	if !t.Valid {
+		return nil, fmt.Errorf("Error token is invalid")
+	}
+
+	claims = t.Claims.(*UserClaims)
+	return claims, nil
+}
+
 func hashPassword(password string) ([]byte, error) {
 	bs, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
