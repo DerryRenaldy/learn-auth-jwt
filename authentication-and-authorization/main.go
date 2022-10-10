@@ -9,6 +9,8 @@ import (
 	"time"
 )
 
+var key []byte
+
 type UserClaims struct {
 	jwt.RegisteredClaims
 	SessionId int64
@@ -24,6 +26,15 @@ func (u *UserClaims) Valid() error {
 	}
 
 	return nil
+}
+
+func createToken(c *UserClaims) (string, error) {
+	t := jwt.NewWithClaims(jwt.SigningMethodHS512, c)
+	signedToken, err := t.SignedString(key)
+	if err != nil {
+		return "", fmt.Errorf("Effor in createToken when signing token: %w \n", err)
+	}
+	return signedToken, nil
 }
 
 func hashPassword(password string) ([]byte, error) {
@@ -44,6 +55,10 @@ func compareHashPassword(password string, hashPassword []byte) error {
 }
 
 func main() {
+	for i := 1; i <= 64; i++ {
+		key = append(key, byte(i))
+	}
+
 	fmt.Println(base64.StdEncoding.EncodeToString([]byte("user:pass")))
 
 	pass := 123456789
